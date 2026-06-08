@@ -1,0 +1,16 @@
+services:
+  - type: web
+    name: canone-production
+    runtime: python
+    buildCommand: pip install -r requirements.txt
+    startCommand: python server.py
+    plan: free      # change to "starter" ($7/mo) to remove sleep
+    envVars:
+      - key: RENDER
+        value: "true"
+      - key: PYTHON_VERSION
+        value: "3.11.0"
+    disk:
+      name: shift-reports-data
+      mountPath: /data/shift-reports
+      sizeGB: 1
