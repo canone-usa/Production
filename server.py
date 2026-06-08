@@ -27,12 +27,22 @@ app = Flask(__name__, static_folder=".")
 CORS(app)  # allows the HTML files to call the API
 
 # ─────────────────────────────────────────────────────────────
-# CONFIGURATION — change P_DRIVE_PATH to your actual P Drive path
+# CONFIGURATION
+# Automatically detects whether running on Render (cloud) or
+# locally (P Drive). No manual changes needed.
 # ─────────────────────────────────────────────────────────────
-P_DRIVE_PATH = r"P:\shift-reports-data"   # <-- update this
 
-# For local testing before P Drive is set up, use a local folder:
-# P_DRIVE_PATH = os.path.join(os.path.dirname(__file__), "shift-reports")
+# Render sets a RENDER environment variable automatically
+IS_RENDER = os.environ.get("RENDER", False)
+
+if IS_RENDER:
+    # Cloud: use Render's persistent disk
+    P_DRIVE_PATH = "/data/shift-reports"
+else:
+    # Local: use P Drive (update this path for your machine)
+    P_DRIVE_PATH = r"P:\shift-reports-data"
+    # Fallback to local folder if P Drive not available:
+    # P_DRIVE_PATH = os.path.join(os.path.dirname(__file__), "shift-reports")
 
 # ─────────────────────────────────────────────────────────────
 # HELPERS
@@ -265,13 +275,70 @@ def delete_report(date_str, shift):
 @app.route("/health", methods=["GET"])
 def health():
     return jsonify({
-        "ok":        True,
-        "server":    "Can-One Shift Report API",
-        "version":   "1.0.0",
-        "p_drive":   P_DRIVE_PATH,
-        "p_drive_ok": os.path.exists(P_DRIVE_PATH),
-        "time":      datetime.now().isoformat()
+        "ok":          True,
+        "server":      "Can-One Shift Report API",
+        "version":     "1.0.0",
+        "environment": "Render (Cloud)" if IS_RENDER else "Local",
+        "storage_path": P_DRIVE_PATH,
+        "storage_exists": os.path.exists(P_DRIVE_PATH),
+        "time":        datetime.now().isoformat()
     })
+
+
+# ─────────────────────────────────────────────────────────────
+# GET /admin/files  — Browse all stored report files
+# ─────────────────────────────────────────────────────────────
+
+@app.route("/admin/files", methods=["GET"])
+def admin_files():
+    """
+    Lists all stored shift report files across all months.
+    Open in browser: /admin/files
+    """
+    try:
+        all_files = []
+        total_size = 0
+
+        if os.path.exists(P_DRIVE_PATH):
+            # Walk all month folders
+            for month_folder in sorted(os.listdir(P_DRIVE_PATH)):
+                month_path = os.path.join(P_DRIVE_PATH, month_folder)
+                if not os.path.isdir(month_path):
+                    continue
+                files_in_month = []
+                for filename in sorted(os.listdir(month_path)):
+                    if not filename.endswith('.json'):
+                        continue
+                    filepath = os.path.join(month_path, filename)
+                    size = os.path.getsize(filepath)
+                    modified = datetime.fromtimestamp(
+                        os.path.getmtime(filepath)
+                    ).isoformat()
+                    total_size += size
+                    files_in_month.append({
+                        "filename": filename,
+                        "size_kb": round(size / 1024, 1),
+                        "modified": modified,
+                        "url": f"/reports/{filename.replace('shift_report_','').replace('.json','').replace('_','/',1)}"
+                    })
+                if files_in_month:
+                    all_files.append({
+                        "month": month_folder,
+                        "count": len(files_in_month),
+                        "files": files_in_month
+                    })
+
+        return jsonify({
+            "ok": True,
+            "storage_path": P_DRIVE_PATH,
+            "storage_exists": os.path.exists(P_DRIVE_PATH),
+            "total_reports": sum(m["count"] for m in all_files),
+            "total_size_kb": round(total_size / 1024, 1),
+            "months": all_files
+        })
+
+    except Exception as e:
+        return jsonify({"ok": False, "error": str(e)}), 500
 
 
 # ─────────────────────────────────────────────────────────────
@@ -279,23 +346,25 @@ def health():
 # ─────────────────────────────────────────────────────────────
 
 if __name__ == "__main__":
+    port = int(os.environ.get("PORT", 5000))
+
     print("=" * 55)
     print("  Can-One USA — Shift Report Server")
     print("=" * 55)
-    print(f"  P Drive path : {P_DRIVE_PATH}")
-    print(f"  P Drive exists: {os.path.exists(P_DRIVE_PATH)}")
+    print(f"  Environment  : {'Render (Cloud)' if IS_RENDER else 'Local'}")
+    print(f"  Storage path : {P_DRIVE_PATH}")
+    print(f"  Storage exists: {os.path.exists(P_DRIVE_PATH)}")
     print()
-    print("  Portal    → http://localhost:5000/portal")
-    print("  Dashboard → http://localhost:5000/dashboard")
-    print("  Health    → http://localhost:5000/health")
+    if IS_RENDER:
+        print("  Running on Render — check your service URL")
+    else:
+        print(f"  Portal    → http://localhost:{port}/portal")
+        print(f"  Dashboard → http://localhost:{port}/dashboard")
+        print(f"  Health    → http://localhost:{port}/health")
     print("=" * 55)
 
-    # Create local fallback folder if P Drive not available
-    if not os.path.exists(P_DRIVE_PATH):
-        local = os.path.join(os.path.dirname(os.path.abspath(__file__)), "shift-reports")
-        print(f"\n  ⚠  P Drive not found. Using local folder:")
-        print(f"     {local}\n")
-        P_DRIVE_PATH = local
-        os.makedirs(P_DRIVE_PATH, exist_ok=True)
+    # Create storage folder if it doesn't exist
+    os.makedirs(P_DRIVE_PATH, exist_ok=True)
 
-    app.run(host="0.0.0.0", port=5000, debug=True)
+    # Use debug=False on Render, True locally
+    app.run(host="0.0.0.0", port=port, debug=not IS_RENDER)
