@@ -770,6 +770,8 @@
   }
 
 </style>
+<!-- Microsoft Authentication Library -->
+<script src="https://alcdn.msauth.net/browser/2.38.3/js/msal-browser.min.js"></script>
 </head>
 <body>
 
@@ -785,6 +787,7 @@
   <div style="display:flex;gap:8px;align-items:center">
     <span class="doc-badge">FORM-OP-053 · REV 03</span>
     <span class="doc-badge">PRODUCTION DEPT</span>
+    <span id="auth-status" class="doc-badge" onclick="signIn()" style="cursor:pointer;color:rgba(255,255,255,0.5)">&#9675; Sign in with Microsoft</span>
   </div>
 </div>
 
@@ -1597,7 +1600,140 @@ function copyJSON() {
 }
 
 // ── Submit ──────────────────────────────────────────
-const SERVER = 'http://localhost:5000';  // update if server is on another PC
+// ── SharePoint / Microsoft Graph Config ──────────────────────
+const MSAL_CONFIG = {
+  auth: {
+    clientId: '8c04492e-ef89-43df-a6c9-611dc0ec2fc4',
+    tenantId: '0d0b6e8c-a5c1-40b9-80c2-7738ecd4f07a',
+    authority: 'https://login.microsoftonline.com/0d0b6e8c-a5c1-40b9-80c2-7738ecd4f07a',
+    redirectUri: window.location.origin + window.location.pathname,
+  },
+  cache: { cacheLocation: 'sessionStorage' }
+};
+
+const GRAPH_SCOPES = ['Files.ReadWrite.All', 'Sites.ReadWrite.All', 'User.Read'];
+const SP_HOST      = 'canoneusa.sharepoint.com';
+const SP_SITE      = '/sites/QualityDataCollection';
+const SP_FOLDER    = 'Shift Reports Data';
+
+const msalInstance = new msal.PublicClientApplication(MSAL_CONFIG);
+let currentAccount = null;
+
+// ── Auth helpers ──────────────────────────────────────────────
+async function ensureSignedIn() {
+  // Handle redirect response first
+  await msalInstance.handleRedirectPromise();
+  const accounts = msalInstance.getAllAccounts();
+  if (accounts.length > 0) {
+    currentAccount = accounts[0];
+    updateAuthUI(currentAccount.name);
+    return true;
+  }
+  return false;
+}
+
+async function signIn() {
+  try {
+    const result = await msalInstance.loginPopup({ scopes: GRAPH_SCOPES });
+    currentAccount = result.account;
+    updateAuthUI(currentAccount.name);
+    showToast('Signed in as ' + currentAccount.name);
+    return true;
+  } catch(e) {
+    showToast('Sign in failed: ' + e.message, 'var(--red)');
+    return false;
+  }
+}
+
+async function getToken() {
+  if (!currentAccount) {
+    const signedIn = await signIn();
+    if (!signedIn) return null;
+  }
+  try {
+    const result = await msalInstance.acquireTokenSilent({
+      scopes: GRAPH_SCOPES,
+      account: currentAccount
+    });
+    return result.accessToken;
+  } catch(e) {
+    // Silent failed — try popup
+    try {
+      const result = await msalInstance.acquireTokenPopup({ scopes: GRAPH_SCOPES });
+      return result.accessToken;
+    } catch(e2) {
+      showToast('Auth error: ' + e2.message, 'var(--red)');
+      return null;
+    }
+  }
+}
+
+function updateAuthUI(name) {
+  const el = document.getElementById('auth-status');
+  if (el) {
+    el.textContent = name ? '● ' + name : '○ Not signed in';
+    el.style.color = name ? 'var(--green)' : 'var(--text3)';
+  }
+}
+
+// ── SharePoint Graph API helpers ──────────────────────────────
+async function getSiteId(token) {
+  const res = await fetch(
+    `https://graph.microsoft.com/v1.0/sites/${SP_HOST}:${SP_SITE}`,
+    { headers: { Authorization: 'Bearer ' + token } }
+  );
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.error?.message || 'Could not get site');
+  return data.id;
+}
+
+async function getDriveId(token, siteId) {
+  const res = await fetch(
+    `https://graph.microsoft.com/v1.0/sites/${siteId}/drives`,
+    { headers: { Authorization: 'Bearer ' + token } }
+  );
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.error?.message || 'Could not get drives');
+  // Use the default Documents drive
+  return data.value[0].id;
+}
+
+async function saveToSharePoint(filename, jsonContent, token) {
+  const siteId  = await getSiteId(token);
+  const driveId = await getDriveId(token, siteId);
+  // Extract month folder from filename e.g. shift_report_2026-06-03_C.json → 2026-06
+  const month   = filename.match(/\d{4}-\d{2}/)?.[0] || new Date().toISOString().slice(0,7);
+  const path    = `${SP_FOLDER}/${month}/${filename}`;
+
+  const res = await fetch(
+    `https://graph.microsoft.com/v1.0/drives/${driveId}/root:/${path}:/content`,
+    {
+      method: 'PUT',
+      headers: {
+        Authorization: 'Bearer ' + token,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify(jsonContent, null, 2)
+    }
+  );
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.error?.message || 'Upload failed');
+  return data;
+}
+
+async function loadFromSharePoint(filename, token) {
+  const siteId  = await getSiteId(token);
+  const driveId = await getDriveId(token, siteId);
+  const month   = filename.match(/\d{4}-\d{2}/)?.[0] || new Date().toISOString().slice(0,7);
+  const path    = `${SP_FOLDER}/${month}/${filename}`;
+
+  const res = await fetch(
+    `https://graph.microsoft.com/v1.0/drives/${driveId}/root:/${path}:/content`,
+    { headers: { Authorization: 'Bearer ' + token } }
+  );
+  if (!res.ok) return null;
+  return await res.json();
+}
 
 async function submitReport() {
   const supervisor = document.getElementById('supervisor').value.trim();
@@ -1606,54 +1742,66 @@ async function submitReport() {
   if (!supervisor) { showToast('ENTER SUPERVISOR NAME', 'var(--red)'); return; }
   if (!date)       { showToast('SELECT A DATE', 'var(--red)'); return; }
 
-  const payload = buildJSON();
+  const payload  = buildJSON();
+  const date_str = payload.header.date;
+  const filename = `shift_report_${date_str}_${shift}.json`;
 
-  // Always show JSON preview
+  // Show JSON preview
   openModal(payload);
 
-  // Try to POST to Flask server
   const submitBtn = document.querySelector('.btn-primary');
-  submitBtn.textContent = 'SUBMITTING...';
+  submitBtn.textContent = 'SIGNING IN...';
   submitBtn.disabled = true;
 
   try {
-    const res  = await fetch(`${SERVER}/submit`, {
-      method:  'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body:    JSON.stringify(payload)
-    });
-    const data = await res.json();
-
-    submitBtn.textContent = 'SUBMIT REPORT';
-    submitBtn.disabled = false;
-
-    if (data.ok) {
-      showToast(`SAVED TO P DRIVE: ${data.filename}`);
-      document.getElementById('submit-status').textContent =
-        `Saved to P Drive · ${shift} Shift · ${date} · ${supervisor}`;
-      document.querySelector('#json-modal div:last-child span').textContent =
-        `Saved to P Drive: ${data.path}${data.overwrite ? ' (updated)' : ''}`;
-    } else {
-      showToast('SERVER ERROR: ' + data.error, 'var(--red)');
+    // Ensure signed in to Microsoft
+    const token = await getToken();
+    if (!token) {
+      submitBtn.textContent = 'SUBMIT REPORT';
+      submitBtn.disabled = false;
+      return;
     }
 
-  } catch (err) {
-    // Server offline — graceful fallback to manual download
+    submitBtn.textContent = 'SAVING TO SHAREPOINT...';
+
+    // Save to SharePoint
+    const result = await saveToSharePoint(filename, payload, token);
+
     submitBtn.textContent = 'SUBMIT REPORT';
     submitBtn.disabled = false;
-    showToast('SERVER OFFLINE — download JSON & copy to P Drive manually', 'var(--accent)');
+
+    showToast(`✓ SAVED TO SHAREPOINT: ${filename}`);
+    document.getElementById('submit-status').textContent =
+      `Saved to SharePoint · ${shift} Shift · ${date} · ${supervisor}`;
     document.querySelector('#json-modal div:last-child span').textContent =
-      '⚠ Server offline — download the JSON and place it in the P Drive folder manually';
+      `✓ Saved to SharePoint: Shift Reports Data/${date.slice(0,7)}/${filename}`;
+
+  } catch (err) {
+    submitBtn.textContent = 'SUBMIT REPORT';
+    submitBtn.disabled = false;
+    showToast('Error: ' + err.message, 'var(--red)');
+    document.querySelector('#json-modal div:last-child span').textContent =
+      '⚠ SharePoint save failed — download the JSON as backup';
+    console.error(err);
   }
 }
 
-function saveDraft() {
-  const supervisor = document.getElementById('supervisor').value.trim() || 'draft';
+async function saveDraft() {
   const shift = document.getElementById('shift').value;
-  const date = document.getElementById('date').value || 'nodate';
-  const json = buildJSON();
-  localStorage.setItem(`draft_${date}_${shift}`, JSON.stringify(json));
-  showToast('DRAFT SAVED LOCALLY');
+  const date  = document.getElementById('date').value || 'nodate';
+  const json  = buildJSON();
+  const filename = `DRAFT_shift_report_${date}_${shift}.json`;
+
+  try {
+    const token = await getToken();
+    if (!token) return;
+    await saveToSharePoint(filename, json, token);
+    showToast('DRAFT SAVED TO SHAREPOINT');
+  } catch(e) {
+    // Fallback to localStorage
+    localStorage.setItem(`draft_${date}_${shift}`, JSON.stringify(json));
+    showToast('DRAFT SAVED LOCALLY (SharePoint unavailable)');
+  }
 }
 
 function clearForm() {
@@ -1673,33 +1821,41 @@ async function loadReport() {
     return;
   }
 
+  const filename = `shift_report_${date}_${shift}.json`;
   const btn = document.querySelector('.btn-load');
-  btn.textContent = 'LOADING...';
+  btn.textContent = 'SIGNING IN...';
   btn.disabled = true;
 
   try {
-    const res  = await fetch(`${SERVER}/reports/${date}/${shift}`);
-    const data = await res.json();
+    const token = await getToken();
+    if (!token) {
+      btn.textContent = '↓ LOAD & EDIT';
+      btn.disabled = false;
+      return;
+    }
+
+    btn.textContent = 'LOADING...';
+    const report = await loadFromSharePoint(filename, token);
 
     btn.textContent = '↓ LOAD & EDIT';
     btn.disabled = false;
 
-    if (!data.ok) {
+    if (!report) {
       document.getElementById('load-status').textContent =
         `No report found for ${date} / ${shift} Shift`;
       showToast('NO REPORT FOUND', 'var(--accent)');
       return;
     }
 
-    populateForm(data.report);
-    enterEditMode(date, shift, data.filename);
-    showToast(`LOADED: ${data.filename}`);
+    populateForm(report);
+    enterEditMode(date, shift, filename);
+    showToast(`LOADED: ${filename}`);
 
   } catch (err) {
     btn.textContent = '↓ LOAD & EDIT';
     btn.disabled = false;
-    document.getElementById('load-status').textContent = 'Server offline — cannot load reports';
-    showToast('SERVER OFFLINE', 'var(--red)');
+    document.getElementById('load-status').textContent = 'Error: ' + err.message;
+    showToast('LOAD FAILED: ' + err.message, 'var(--red)');
   }
 }
 
@@ -1891,6 +2047,8 @@ renderHourly();
 renderTimeline();
 calcOEE();
 calcTotes();
+// Check if already signed in from previous session
+ensureSignedIn().catch(() => {});
 </script>
 
 <!-- Toast -->
