@@ -1616,15 +1616,23 @@ const SP_HOST      = 'canoneusa.sharepoint.com';
 const SP_SITE      = '/sites/QualityDataCollection';
 const SP_FOLDER    = 'Shift Reports Data';
 
-const msalInstance = new msal.PublicClientApplication(MSAL_CONFIG);
+let msalInstance = null;
 let currentAccount = null;
 
 // ── Auth helpers ──────────────────────────────────────────────
+async function getMsal() {
+  if (!msalInstance) {
+    msalInstance = new msal.PublicClientApplication(MSAL_CONFIG);
+    await msalInstance.initialize();
+  }
+  return msalInstance;
+}
+
 async function ensureSignedIn() {
   try {
-    await msalInstance.initialize();
-    await msalInstance.handleRedirectPromise();
-    const accounts = msalInstance.getAllAccounts();
+    const instance = await getMsal();
+    await instance.handleRedirectPromise();
+    const accounts = instance.getAllAccounts();
     if (accounts.length > 0) {
       currentAccount = accounts[0];
       updateAuthUI(currentAccount.name);
@@ -1638,8 +1646,8 @@ async function ensureSignedIn() {
 
 async function signIn() {
   try {
-    await msalInstance.initialize();
-    const result = await msalInstance.loginPopup({ scopes: GRAPH_SCOPES });
+    const instance = await getMsal();
+    const result = await instance.loginPopup({ scopes: GRAPH_SCOPES });
     currentAccount = result.account;
     updateAuthUI(currentAccount.name);
     showToast('Signed in as ' + currentAccount.name);
@@ -1651,21 +1659,26 @@ async function signIn() {
 }
 
 async function getToken() {
-  await msalInstance.initialize();
+  const instance = await getMsal();
   if (!currentAccount) {
-    const signedIn = await signIn();
-    if (!signedIn) return null;
+    const accounts = instance.getAllAccounts();
+    if (accounts.length > 0) {
+      currentAccount = accounts[0];
+      updateAuthUI(currentAccount.name);
+    } else {
+      const signedIn = await signIn();
+      if (!signedIn) return null;
+    }
   }
   try {
-    const result = await msalInstance.acquireTokenSilent({
+    const result = await instance.acquireTokenSilent({
       scopes: GRAPH_SCOPES,
       account: currentAccount
     });
     return result.accessToken;
   } catch(e) {
-    // Silent failed — try popup
     try {
-      const result = await msalInstance.acquireTokenPopup({ scopes: GRAPH_SCOPES });
+      const result = await instance.acquireTokenPopup({ scopes: GRAPH_SCOPES });
       return result.accessToken;
     } catch(e2) {
       showToast('Auth error: ' + e2.message, 'var(--red)');
@@ -2056,7 +2069,6 @@ async function init() {
   calcTotes();
   // Check if already signed in from previous session
   try {
-    await msalInstance.initialize();
     await ensureSignedIn();
   } catch(e) {
     console.warn('MSAL init:', e.message);
