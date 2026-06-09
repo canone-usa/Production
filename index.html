@@ -771,7 +771,20 @@
 
 </style>
 <!-- Microsoft Authentication Library -->
-<script src="https://alcdn.msauth.net/browser/2.38.3/js/msal-browser.min.js"></script>
+<script src="https://alcdn.msauth.net/browser/2.38.3/js/msal-browser.min.js"
+  integrity="sha384-9sTdBjAl8xAiO0XbEqAl1eJMoR4zWcO4uLDvT0kJ2g5MSwDhCBBKMWVPiMrHbsD"
+  crossorigin="anonymous"
+  onerror="document.getElementById('msal-error').style.display='block'">
+</script>
+<script>
+// Fallback CDN if primary fails
+if (typeof msal === 'undefined') {
+  document.write('<script src="https://cdn.jsdelivr.net/npm/@azure/msal-browser@2.38.3/lib/msal-browser.min.js"><\/script>');
+}
+</script>
+<div id="msal-error" style="display:none;position:fixed;top:70px;right:20px;background:#e85050;color:#fff;font-family:monospace;font-size:11px;padding:10px 16px;border-radius:4px;z-index:999">
+  ⚠ Auth library failed to load — check network/firewall
+</div>
 </head>
 <body>
 
