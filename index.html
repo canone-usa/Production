@@ -780,7 +780,6 @@
     justify-content: center;
     z-index: 500;
     flex-direction: column;
-    gap: 0;
   }
   .login-screen.hidden { display: none; }
   .login-card {
@@ -788,18 +787,12 @@
     border: 1px solid var(--border);
     border-radius: 10px;
     padding: 48px 52px;
-    max-width: 420px;
+    max-width: 400px;
     width: 90%;
     text-align: center;
   }
-  .login-logo {
-    margin-bottom: 28px;
-  }
-  .login-logo img {
-    height: 48px;
-    width: auto;
-    filter: none;
-  }
+  .login-logo { margin-bottom: 24px; }
+  .login-logo img { height: 48px; width: auto; }
   .login-title {
     font-family: var(--sans);
     font-size: 18px;
@@ -813,51 +806,84 @@
     color: var(--text3);
     letter-spacing: 0.06em;
     text-transform: uppercase;
-    margin-bottom: 32px;
-  }
-  .login-divider {
-    height: 1px;
-    background: var(--border);
     margin-bottom: 28px;
   }
-  .login-info {
+  .login-divider { height: 1px; background: var(--border); margin-bottom: 24px; }
+  .shift-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+    margin-bottom: 20px;
+  }
+  .shift-btn {
+    background: var(--bg3);
+    border: 2px solid var(--border);
+    border-radius: 6px;
+    color: var(--text2);
     font-family: var(--mono);
-    font-size: 11px;
-    color: var(--text3);
-    margin-bottom: 24px;
-    line-height: 1.6;
-  }
-  .btn-ms-login {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 12px;
-    width: 100%;
-    background: #0078d4;
-    border: none;
-    border-radius: 4px;
-    color: #fff;
-    font-family: var(--sans);
-    font-size: 14px;
-    font-weight: 500;
-    padding: 12px 24px;
+    font-size: 13px;
+    font-weight: 600;
+    padding: 12px;
     cursor: pointer;
-    transition: background 0.15s;
-    letter-spacing: 0.02em;
+    transition: all 0.15s;
+    letter-spacing: 0.05em;
   }
-  .btn-ms-login:hover { background: #006cbd; }
-  .btn-ms-login:disabled { background: var(--border2); color: var(--text3); cursor: not-allowed; }
-  .btn-ms-login svg { flex-shrink: 0; }
+  .shift-btn:hover { border-color: var(--accent); color: var(--accent); }
+  .shift-btn.selected { border-color: var(--accent); background: rgba(232,160,32,0.1); color: var(--accent); }
+  .pin-label {
+    font-family: var(--mono);
+    font-size: 10px;
+    color: var(--text3);
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    margin-bottom: 8px;
+    text-align: left;
+  }
+  .pin-input {
+    width: 100%;
+    background: var(--bg3);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    color: var(--text);
+    font-family: var(--mono);
+    font-size: 24px;
+    font-weight: 600;
+    padding: 12px 16px;
+    text-align: center;
+    letter-spacing: 0.3em;
+    outline: none;
+    margin-bottom: 16px;
+    transition: border-color 0.15s;
+  }
+  .pin-input:focus { border-color: var(--accent); }
+  .btn-pin-enter {
+    width: 100%;
+    background: var(--accent);
+    border: none;
+    border-radius: 6px;
+    color: #000;
+    font-family: var(--mono);
+    font-size: 13px;
+    font-weight: 700;
+    padding: 13px;
+    cursor: pointer;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    transition: background 0.15s;
+  }
+  .btn-pin-enter:hover { background: var(--accent2); }
+  .btn-pin-enter:disabled { background: var(--border2); color: var(--text3); cursor: not-allowed; }
   .login-error {
-    margin-top: 16px;
+    margin-top: 12px;
     font-family: var(--mono);
     font-size: 11px;
     color: var(--red);
     display: none;
+    text-align: center;
   }
   .login-error.show { display: block; }
   .login-footer {
-    margin-top: 24px;
+    margin-top: 20px;
     font-family: var(--mono);
     font-size: 10px;
     color: var(--text3);
@@ -866,7 +892,7 @@
 
 </style>
 <!-- Microsoft Authentication Library -->
-<script src="https://cdn.jsdelivr.net/npm/@azure/msal-browser@3.28.0/lib/msal-browser.min.js"></script>
+<!-- MSAL removed — using PIN auth -->
 </head>
 <body>
 
@@ -879,16 +905,16 @@
     <div class="login-title">Supervisor Shift Report</div>
     <div class="login-sub">Production Portal · Can-One USA</div>
     <div class="login-divider"></div>
-    <div class="login-info">Sign in with your Can-One Microsoft account to access and submit shift reports.</div>
-    <button class="btn-ms-login" id="login-btn" onclick="loginAndEnter()">
-      <svg width="20" height="20" viewBox="0 0 21 21" fill="none">
-        <rect x="1" y="1" width="9" height="9" fill="#f25022"/>
-        <rect x="11" y="1" width="9" height="9" fill="#7fba00"/>
-        <rect x="1" y="11" width="9" height="9" fill="#00a4ef"/>
-        <rect x="11" y="11" width="9" height="9" fill="#ffb900"/>
-      </svg>
-      Sign in with Microsoft
-    </button>
+    <div class="pin-label">Select Your Shift</div>
+    <div class="shift-grid">
+      <button class="shift-btn" onclick="selectShift('A')">A SHIFT</button>
+      <button class="shift-btn" onclick="selectShift('B')">B SHIFT</button>
+      <button class="shift-btn" onclick="selectShift('C')">C SHIFT</button>
+      <button class="shift-btn" onclick="selectShift('D')">D SHIFT</button>
+    </div>
+    <div class="pin-label">Enter PIN</div>
+    <input class="pin-input" type="password" id="pin-input" maxlength="6" placeholder="••••" onkeydown="if(event.key==='Enter') enterWithPin()">
+    <button class="btn-pin-enter" id="pin-enter-btn" onclick="enterWithPin()">Enter Portal</button>
     <div class="login-error" id="login-error"></div>
     <div class="login-footer">FORM-OP-053 · REV 03 · PRODUCTION DEPT</div>
   </div>
@@ -1864,62 +1890,29 @@ async function submitReport() {
   const date_str = payload.header.date;
   const filename = `shift_report_${date_str}_${shift}.json`;
 
-  // Show JSON preview
+  // Show JSON preview modal
   openModal(payload);
 
-  const submitBtn = document.querySelector('.btn-primary');
-  submitBtn.textContent = 'SIGNING IN...';
-  submitBtn.disabled = true;
+  // Auto-download the JSON file
+  const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = filename;
+  a.click();
 
-  try {
-    // Ensure signed in to Microsoft
-    const token = await getToken();
-    if (!token) {
-      submitBtn.textContent = 'SUBMIT REPORT';
-      submitBtn.disabled = false;
-      return;
-    }
-
-    submitBtn.textContent = 'SAVING TO SHAREPOINT...';
-
-    // Save to SharePoint
-    const result = await saveToSharePoint(filename, payload, token);
-
-    submitBtn.textContent = 'SUBMIT REPORT';
-    submitBtn.disabled = false;
-
-    showToast(`✓ SAVED TO SHAREPOINT: ${filename}`);
-    document.getElementById('submit-status').textContent =
-      `Saved to SharePoint · ${shift} Shift · ${date} · ${supervisor}`;
-    document.querySelector('#json-modal div:last-child span').textContent =
-      `✓ Saved to SharePoint: Shift Reports Data/${date.slice(0,7)}/${filename}`;
-
-  } catch (err) {
-    submitBtn.textContent = 'SUBMIT REPORT';
-    submitBtn.disabled = false;
-    showToast('Error: ' + err.message, 'var(--red)');
-    document.querySelector('#json-modal div:last-child span').textContent =
-      '⚠ SharePoint save failed — download the JSON as backup';
-    console.error(err);
-  }
+  showToast(`✓ REPORT DOWNLOADED: ${filename}`);
+  document.getElementById('submit-status').textContent =
+    `Downloaded · ${shift} Shift · ${date} · ${supervisor}`;
+  document.querySelector('#json-modal div:last-child span').textContent =
+    `✓ Downloaded: ${filename} — copy to SharePoint folder`;
 }
 
-async function saveDraft() {
+function saveDraft() {
   const shift = document.getElementById('shift').value;
   const date  = document.getElementById('date').value || 'nodate';
   const json  = buildJSON();
-  const filename = `DRAFT_shift_report_${date}_${shift}.json`;
-
-  try {
-    const token = await getToken();
-    if (!token) return;
-    await saveToSharePoint(filename, json, token);
-    showToast('DRAFT SAVED TO SHAREPOINT');
-  } catch(e) {
-    // Fallback to localStorage
-    localStorage.setItem(`draft_${date}_${shift}`, JSON.stringify(json));
-    showToast('DRAFT SAVED LOCALLY (SharePoint unavailable)');
-  }
+  localStorage.setItem(`draft_${date}_${shift}`, JSON.stringify(json));
+  showToast('DRAFT SAVED LOCALLY');
 }
 
 function clearForm() {
@@ -1930,7 +1923,7 @@ function clearForm() {
 // ── LOAD & EDIT ──────────────────────────────────────────────
 let editMode = false;
 
-async function loadReport() {
+function loadReport() {
   const date  = document.getElementById('load-date').value;
   const shift = document.getElementById('load-shift').value;
 
@@ -1940,40 +1933,23 @@ async function loadReport() {
   }
 
   const filename = `shift_report_${date}_${shift}.json`;
-  const btn = document.querySelector('.btn-load');
-  btn.textContent = 'SIGNING IN...';
-  btn.disabled = true;
+  const key = `draft_${date}_${shift}`;
+  const saved = localStorage.getItem(key);
+
+  if (!saved) {
+    document.getElementById('load-status').textContent =
+      `No saved draft found for ${date} / ${shift} Shift`;
+    showToast('NO DRAFT FOUND', 'var(--accent)');
+    return;
+  }
 
   try {
-    const token = await getToken();
-    if (!token) {
-      btn.textContent = '↓ LOAD & EDIT';
-      btn.disabled = false;
-      return;
-    }
-
-    btn.textContent = 'LOADING...';
-    const report = await loadFromSharePoint(filename, token);
-
-    btn.textContent = '↓ LOAD & EDIT';
-    btn.disabled = false;
-
-    if (!report) {
-      document.getElementById('load-status').textContent =
-        `No report found for ${date} / ${shift} Shift`;
-      showToast('NO REPORT FOUND', 'var(--accent)');
-      return;
-    }
-
+    const report = JSON.parse(saved);
     populateForm(report);
     enterEditMode(date, shift, filename);
-    showToast(`LOADED: ${filename}`);
-
-  } catch (err) {
-    btn.textContent = '↓ LOAD & EDIT';
-    btn.disabled = false;
-    document.getElementById('load-status').textContent = 'Error: ' + err.message;
-    showToast('LOAD FAILED: ' + err.message, 'var(--red)');
+    showToast(`LOADED DRAFT: ${filename}`);
+  } catch(e) {
+    showToast('LOAD FAILED', 'var(--red)');
   }
 }
 
@@ -2156,37 +2132,78 @@ function esc(str)           { return (str || '').replace(/"/g, '&quot;'); }
 
 
 // ── Init ──────────────────────────────────────────
-async function loginAndEnter() {
-  const btn = document.getElementById('login-btn');
+// ── PIN Authentication ──────────────────────────────────────
+// Change these PINs as needed
+const SHIFT_PINS = {
+  'A': '1234',
+  'B': '2345',
+  'C': '3456',
+  'D': '4567'
+};
+
+let selectedShift = null;
+
+function selectShift(shift) {
+  selectedShift = shift;
+  document.querySelectorAll('.shift-btn').forEach(btn => btn.classList.remove('selected'));
+  event.target.classList.add('selected');
+  document.getElementById('pin-input').focus();
+  // Auto-set the shift in the form
+  const shiftSelect = document.getElementById('shift');
+  if (shiftSelect) shiftSelect.value = shift;
+}
+
+function enterWithPin() {
   const errEl = document.getElementById('login-error');
-  btn.disabled = true;
-  btn.innerHTML = `<svg width="20" height="20" viewBox="0 0 21 21" fill="none">
-    <rect x="1" y="1" width="9" height="9" fill="#f25022"/>
-    <rect x="11" y="1" width="9" height="9" fill="#7fba00"/>
-    <rect x="1" y="11" width="9" height="9" fill="#00a4ef"/>
-    <rect x="11" y="11" width="9" height="9" fill="#ffb900"/>
-  </svg> Signing in...`;
+  const pin = document.getElementById('pin-input').value;
   errEl.classList.remove('show');
 
-  try {
-    const success = await signIn();
-    if (success) {
-      document.getElementById('login-screen').classList.add('hidden');
-      showToast('Welcome, ' + currentAccount.name);
-    } else {
-      throw new Error('Sign in was cancelled or failed');
-    }
-  } catch(e) {
-    errEl.textContent = 'Sign in failed: ' + e.message;
+  if (!selectedShift) {
+    errEl.textContent = 'Please select your shift first.';
     errEl.classList.add('show');
-    btn.disabled = false;
-    btn.innerHTML = `<svg width="20" height="20" viewBox="0 0 21 21" fill="none">
-      <rect x="1" y="1" width="9" height="9" fill="#f25022"/>
-      <rect x="11" y="1" width="9" height="9" fill="#7fba00"/>
-      <rect x="1" y="11" width="9" height="9" fill="#00a4ef"/>
-      <rect x="11" y="11" width="9" height="9" fill="#ffb900"/>
-    </svg> Sign in with Microsoft`;
+    return;
   }
+  if (!pin) {
+    errEl.textContent = 'Please enter your PIN.';
+    errEl.classList.add('show');
+    return;
+  }
+  if (pin !== SHIFT_PINS[selectedShift]) {
+    errEl.textContent = 'Incorrect PIN. Please try again.';
+    errEl.classList.add('show');
+    document.getElementById('pin-input').value = '';
+    document.getElementById('pin-input').focus();
+    return;
+  }
+
+  // Correct PIN — enter portal
+  document.getElementById('login-screen').classList.add('hidden');
+
+  // Lock the shift dropdown to the selected shift
+  const shiftSelect = document.getElementById('shift');
+  if (shiftSelect) {
+    shiftSelect.value = selectedShift;
+    shiftSelect.disabled = true;
+    shiftSelect.style.opacity = '0.6';
+    shiftSelect.style.cursor = 'not-allowed';
+  }
+
+  // Also lock the load-shift dropdown
+  const loadShift = document.getElementById('load-shift');
+  if (loadShift) {
+    loadShift.value = selectedShift;
+    loadShift.disabled = true;
+    loadShift.style.opacity = '0.6';
+    loadShift.style.cursor = 'not-allowed';
+  }
+
+  // Update auth status badge
+  const authEl = document.getElementById('auth-status');
+  if (authEl) {
+    authEl.textContent = '● ' + selectedShift + ' Shift';
+    authEl.style.color = 'var(--green)';
+  }
+  showToast('Welcome — ' + selectedShift + ' Shift');
 }
 
 async function init() {
@@ -2200,16 +2217,7 @@ async function init() {
   calcOEE();
   calcTotes();
 
-  // Check if already signed in — if so skip login screen
-  try {
-    const alreadyIn = await ensureSignedIn();
-    if (alreadyIn) {
-      document.getElementById('login-screen').classList.add('hidden');
-    }
-    // Otherwise login screen stays visible
-  } catch(e) {
-    console.warn('MSAL init:', e.message);
-  }
+  // Login screen shows by default — user must enter PIN
 }
 
 // Wait for page to fully load before initializing
@@ -2235,7 +2243,7 @@ if (document.readyState === 'loading') {
     </div>
     <pre id="json-output" style="flex:1;overflow:auto;margin:0;padding:20px;font-family:var(--mono);font-size:11.5px;line-height:1.65;color:#6ee7b7;background:var(--bg);white-space:pre;"></pre>
     <div style="padding:14px 20px;border-top:1px solid var(--border);display:flex;gap:10px;justify-content:space-between;align-items:center;flex-shrink:0">
-      <span style="font-family:var(--mono);font-size:10px;color:var(--text3);letter-spacing:0.05em">Next step: POST this JSON to your Flask endpoint</span>
+      <span style="font-family:var(--mono);font-size:10px;color:var(--text3);letter-spacing:0.05em">Save this file to your SharePoint Shift Reports Data folder</span>
       <div style="display:flex;gap:10px">
         <button onclick="copyJSON()" class="btn-secondary">COPY JSON</button>
         <button onclick="downloadJSON()" class="btn-primary">↓ DOWNLOAD .JSON</button>
