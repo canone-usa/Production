@@ -1817,36 +1817,16 @@ function updateAuthUI(name) {
 }
 
 // ── SharePoint Graph API helpers ──────────────────────────────
-async function getSiteId(token) {
-  const res = await fetch(
-    `https://graph.microsoft.com/v1.0/sites/${SP_HOST}:${SP_SITE}`,
-    { headers: { Authorization: 'Bearer ' + token } }
-  );
-  const data = await res.json();
-  if (!res.ok) throw new Error(data.error?.message || 'Could not get site');
-  return data.id;
-}
-
-async function getDriveId(token, siteId) {
-  const res = await fetch(
-    `https://graph.microsoft.com/v1.0/sites/${siteId}/drives`,
-    { headers: { Authorization: 'Bearer ' + token } }
-  );
-  const data = await res.json();
-  if (!res.ok) throw new Error(data.error?.message || 'Could not get drives');
-  // Use the default Documents drive
-  return data.value[0].id;
-}
+// ── OneDrive helpers (no admin consent needed) ───────────────
+// Saves to the signed-in user's OneDrive under:
+// Can-One Shift Reports / YYYY-MM / filename.json
 
 async function saveToSharePoint(filename, jsonContent, token) {
-  const siteId  = await getSiteId(token);
-  const driveId = await getDriveId(token, siteId);
-  // Extract month folder from filename e.g. shift_report_2026-06-03_C.json → 2026-06
-  const month   = filename.match(/\d{4}-\d{2}/)?.[0] || new Date().toISOString().slice(0,7);
-  const path    = `${SP_FOLDER}/${month}/${filename}`;
+  const month = filename.match(/\d{4}-\d{2}/)?.[0] || new Date().toISOString().slice(0,7);
+  const path  = `Can-One Shift Reports/${month}/${filename}`;
 
   const res = await fetch(
-    `https://graph.microsoft.com/v1.0/drives/${driveId}/root:/${path}:/content`,
+    `https://graph.microsoft.com/v1.0/me/drive/root:/${path}:/content`,
     {
       method: 'PUT',
       headers: {
@@ -1862,13 +1842,11 @@ async function saveToSharePoint(filename, jsonContent, token) {
 }
 
 async function loadFromSharePoint(filename, token) {
-  const siteId  = await getSiteId(token);
-  const driveId = await getDriveId(token, siteId);
-  const month   = filename.match(/\d{4}-\d{2}/)?.[0] || new Date().toISOString().slice(0,7);
-  const path    = `${SP_FOLDER}/${month}/${filename}`;
+  const month = filename.match(/\d{4}-\d{2}/)?.[0] || new Date().toISOString().slice(0,7);
+  const path  = `Can-One Shift Reports/${month}/${filename}`;
 
   const res = await fetch(
-    `https://graph.microsoft.com/v1.0/drives/${driveId}/root:/${path}:/content`,
+    `https://graph.microsoft.com/v1.0/me/drive/root:/${path}:/content`,
     { headers: { Authorization: 'Bearer ' + token } }
   );
   if (!res.ok) return null;
