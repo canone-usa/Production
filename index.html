@@ -1606,7 +1606,7 @@ const MSAL_CONFIG = {
     clientId: '8c04492e-ef89-43df-a6c9-611dc0ec2fc4',
     tenantId: '0d0b6e8c-a5c1-40b9-80c2-7738ecd4f07a',
     authority: 'https://login.microsoftonline.com/0d0b6e8c-a5c1-40b9-80c2-7738ecd4f07a',
-    redirectUri: window.location.origin + window.location.pathname,
+    redirectUri: 'https://canone-usa.github.io/Production/',
   },
   cache: { cacheLocation: 'sessionStorage' }
 };
@@ -1621,19 +1621,24 @@ let currentAccount = null;
 
 // ── Auth helpers ──────────────────────────────────────────────
 async function ensureSignedIn() {
-  // Handle redirect response first
-  await msalInstance.handleRedirectPromise();
-  const accounts = msalInstance.getAllAccounts();
-  if (accounts.length > 0) {
-    currentAccount = accounts[0];
-    updateAuthUI(currentAccount.name);
-    return true;
+  try {
+    await msalInstance.initialize();
+    await msalInstance.handleRedirectPromise();
+    const accounts = msalInstance.getAllAccounts();
+    if (accounts.length > 0) {
+      currentAccount = accounts[0];
+      updateAuthUI(currentAccount.name);
+      return true;
+    }
+  } catch(e) {
+    console.warn('ensureSignedIn:', e.message);
   }
   return false;
 }
 
 async function signIn() {
   try {
+    await msalInstance.initialize();
     const result = await msalInstance.loginPopup({ scopes: GRAPH_SCOPES });
     currentAccount = result.account;
     updateAuthUI(currentAccount.name);
@@ -1646,6 +1651,7 @@ async function signIn() {
 }
 
 async function getToken() {
+  await msalInstance.initialize();
   if (!currentAccount) {
     const signedIn = await signIn();
     if (!signedIn) return null;
@@ -2038,17 +2044,31 @@ function esc(str)           { return (str || '').replace(/"/g, '&quot;'); }
 
 
 // ── Init ──────────────────────────────────────────
-// Default load-date to today
-document.getElementById('load-date').value = new Date().toISOString().slice(0,10);
-renderBM();
-renderSprays();
-renderPallets();
-renderHourly();
-renderTimeline();
-calcOEE();
-calcTotes();
-// Check if already signed in from previous session
-ensureSignedIn().catch(() => {});
+async function init() {
+  // Default load-date to today
+  document.getElementById('load-date').value = new Date().toISOString().slice(0,10);
+  renderBM();
+  renderSprays();
+  renderPallets();
+  renderHourly();
+  renderTimeline();
+  calcOEE();
+  calcTotes();
+  // Check if already signed in from previous session
+  try {
+    await msalInstance.initialize();
+    await ensureSignedIn();
+  } catch(e) {
+    console.warn('MSAL init:', e.message);
+  }
+}
+
+// Wait for page to fully load before initializing
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', init);
+} else {
+  init();
+}
 </script>
 
 <!-- Toast -->
