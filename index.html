@@ -7,19 +7,19 @@
 <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
 <style>
   :root {
-    --bg: #0f1117;
-    --bg2: #181b24;
-    --bg3: #1f2330;
-    --border: #2a2f3d;
-    --border2: #363c4e;
-    --accent: #e8a020;
-    --accent2: #f0b840;
-    --text: #e2e4ec;
-    --text2: #8b90a0;
-    --text3: #555a6a;
-    --green: #2dd4a0;
-    --red: #e85050;
-    --blue: #4a8cff;
+    --bg: #f4f5f7;
+    --bg2: #ffffff;
+    --bg3: #f0f1f3;
+    --border: #d0d3db;
+    --border2: #b0b5c0;
+    --accent: #c87000;
+    --accent2: #e08800;
+    --text: #1a1d26;
+    --text2: #3a3f52;
+    --text3: #6b7080;
+    --green: #1a8a60;
+    --red: #cc2222;
+    --blue: #1a6abf;
     --mono: 'IBM Plex Mono', monospace;
     --sans: 'IBM Plex Sans', sans-serif;
   }
@@ -30,7 +30,7 @@
     background: var(--bg);
     color: var(--text);
     font-family: var(--sans);
-    font-size: 14px;
+    font-size: 16px;
     min-height: 100vh;
   }
 
@@ -46,7 +46,7 @@
     position: sticky;
     top: 0;
     z-index: 100;
-    box-shadow: 0 2px 12px rgba(0,0,0,0.4);
+    box-shadow: 0 2px 8px rgba(0,0,0,0.15);
   }
   .topbar-left {
     display: flex;
@@ -106,18 +106,18 @@
   .section-head:first-child { margin-top: 0; }
   .section-tag {
     font-family: var(--mono);
-    font-size: 10px;
-    font-weight: 600;
-    letter-spacing: 0.12em;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.10em;
     text-transform: uppercase;
-    color: #000;
+    color: #fff;
     background: var(--accent);
-    padding: 3px 8px;
-    border-radius: 2px;
+    padding: 4px 10px;
+    border-radius: 3px;
   }
-  .section-tag.blue { background: var(--blue); }
-  .section-tag.green { background: var(--green); }
-  .section-tag.red { background: var(--red); }
+  .section-tag.blue { background: var(--blue); color: #fff; }
+  .section-tag.green { background: var(--green); color: #fff; }
+  .section-tag.red { background: var(--red); color: #fff; }
   .section-label {
     font-family: var(--mono);
     font-size: 12px;
@@ -158,7 +158,8 @@
     font-weight: 500;
     letter-spacing: 0.09em;
     text-transform: uppercase;
-    color: var(--text3);
+    color: var(--text2);
+    font-size: 11px;
   }
   .field input, .field select, .field textarea {
     background: var(--bg3);
@@ -166,8 +167,8 @@
     border-radius: 4px;
     color: var(--text);
     font-family: var(--mono);
-    font-size: 13px;
-    padding: 8px 10px;
+    font-size: 15px;
+    padding: 10px 12px;
     width: 100%;
     transition: border-color 0.15s;
     outline: none;
@@ -194,8 +195,8 @@
   }
   .oee-value {
     font-family: var(--mono);
-    font-size: 28px;
-    font-weight: 600;
+    font-size: 32px;
+    font-weight: 700;
     color: var(--accent);
     transition: color 0.3s;
   }
@@ -268,7 +269,7 @@
   .bm-table tr:last-child td { border-bottom: none; }
   .bm-table tr:hover td { background: rgba(255,255,255,0.02); }
   .bm-table input {
-    background: transparent;
+    background: var(--bg3);
     border: 1px solid transparent;
     border-radius: 3px;
     color: var(--text);
@@ -287,7 +288,7 @@
     background: var(--bg3);
   }
   .bm-label {
-    color: var(--accent2);
+    color: var(--accent);
     font-weight: 500;
     font-size: 12px;
     padding: 5px 8px;
@@ -319,7 +320,7 @@
     vertical-align: middle;
   }
   .deco-table input {
-    background: transparent;
+    background: var(--bg3);
     border: 1px solid transparent;
     border-radius: 3px;
     color: var(--text);
@@ -363,7 +364,7 @@
   .pallet-table tr:last-child td { border-bottom: none; }
   .pallet-table tr:hover td { background: rgba(255,255,255,0.02); }
   .pallet-table input {
-    background: transparent;
+    background: var(--bg3);
     border: 1px solid transparent;
     border-radius: 3px;
     color: var(--text);
@@ -401,8 +402,9 @@
     font-family: var(--mono);
     font-size: 11px;
     font-weight: 500;
-    color: var(--text2);
+    color: var(--text);
     letter-spacing: 0.05em;
+    font-size: 13px;
   }
   .spray-toggle {
     display: flex;
@@ -451,8 +453,8 @@
     border-bottom: 1px solid var(--border2);
     color: var(--red);
     font-family: var(--mono);
-    font-size: 18px;
-    font-weight: 500;
+    font-size: 20px;
+    font-weight: 700;
     width: 100%;
     text-align: center;
     outline: none;
@@ -489,9 +491,9 @@
   }
   .hour-label {
     font-family: var(--mono);
-    font-size: 10px;
+    font-size: 12px;
     color: var(--accent);
-    font-weight: 500;
+    font-weight: 700;
     letter-spacing: 0.05em;
     margin-bottom: 8px;
   }
@@ -505,7 +507,7 @@
     letter-spacing: 0.07em;
   }
   .hour-card input {
-    background: var(--bg2);
+    background: #fff;
     border: 1px solid var(--border);
     border-radius: 3px;
     color: var(--text);
@@ -521,7 +523,7 @@
   .hour-card input::-webkit-inner-spin-button { -webkit-appearance: none; }
   .hour-card input:focus { border-color: var(--accent); }
   .hour-card textarea {
-    background: var(--bg2);
+    background: #fff;
     border: 1px solid var(--border);
     border-radius: 3px;
     color: var(--text);
@@ -601,9 +603,9 @@
   }
   .submit-status {
     font-family: var(--mono);
-    font-size: 11px;
-    color: var(--text3);
-    letter-spacing: 0.05em;
+    font-size: 13px;
+    color: var(--text2);
+    letter-spacing: 0.03em;
   }
   .submit-actions { display: flex; gap: 10px; }
   .btn-secondary {
@@ -612,11 +614,11 @@
     border-radius: 4px;
     color: var(--text2);
     font-family: var(--mono);
-    font-size: 12px;
+    font-size: 14px;
     font-weight: 500;
-    padding: 9px 20px;
+    padding: 10px 22px;
     cursor: pointer;
-    letter-spacing: 0.05em;
+    letter-spacing: 0.03em;
     transition: all 0.15s;
   }
   .btn-secondary:hover { border-color: var(--text2); color: var(--text); }
@@ -626,9 +628,9 @@
     border-radius: 4px;
     color: #000;
     font-family: var(--mono);
-    font-size: 12px;
-    font-weight: 600;
-    padding: 9px 28px;
+    font-size: 14px;
+    font-weight: 700;
+    padding: 10px 32px;
     cursor: pointer;
     letter-spacing: 0.06em;
     text-transform: uppercase;
@@ -774,7 +776,7 @@
   .login-screen {
     position: fixed;
     inset: 0;
-    background: var(--bg);
+    background: #e8eaf0;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -783,10 +785,11 @@
   }
   .login-screen.hidden { display: none; }
   .login-card {
-    background: var(--bg2);
+    background: #ffffff;
     border: 1px solid var(--border);
     border-radius: 10px;
     padding: 48px 52px;
+    box-shadow: 0 4px 24px rgba(0,0,0,0.12);
     max-width: 400px;
     width: 90%;
     text-align: center;
@@ -892,7 +895,7 @@
 
 </style>
 <!-- Microsoft Authentication Library -->
-<!-- MSAL removed — using PIN auth -->
+<!-- No Microsoft auth needed -->
 </head>
 <body>
 
@@ -1879,7 +1882,7 @@ async function loadFromSharePoint(filename, token) {
   return await res.json();
 }
 
-async function submitReport() {
+function submitReport() {
   const supervisor = document.getElementById('supervisor').value.trim();
   const shift      = document.getElementById('shift').value;
   const date       = document.getElementById('date').value;
@@ -1890,21 +1893,24 @@ async function submitReport() {
   const date_str = payload.header.date;
   const filename = `shift_report_${date_str}_${shift}.json`;
 
-  // Show JSON preview modal
-  openModal(payload);
-
-  // Auto-download the JSON file
+  // Download JSON file automatically
   const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
   const a = document.createElement('a');
   a.href = URL.createObjectURL(blob);
   a.download = filename;
   a.click();
 
-  showToast(`✓ REPORT DOWNLOADED: ${filename}`);
+  // Open SharePoint folder in new tab so supervisor can drag file in
+  window.open('https://canoneusa.sharepoint.com/sites/QualityDataCollection/Shared%20Documents/Shift%20Reports%20Data', '_blank');
+
+  // Show JSON preview
+  openModal(payload);
+
+  showToast('✓ FILE DOWNLOADED — upload to SharePoint folder');
   document.getElementById('submit-status').textContent =
     `Downloaded · ${shift} Shift · ${date} · ${supervisor}`;
   document.querySelector('#json-modal div:last-child span').textContent =
-    `✓ Downloaded: ${filename} — copy to SharePoint folder`;
+    `✓ Downloaded: ${filename} — drag into the SharePoint tab that just opened`;
 }
 
 function saveDraft() {
@@ -2206,19 +2212,7 @@ function enterWithPin() {
   showToast('Welcome — ' + selectedShift + ' Shift');
 }
 
-async function init() {
-  // Default load-date to today
-  document.getElementById('load-date').value = new Date().toISOString().slice(0,10);
-  renderBM();
-  renderSprays();
-  renderPallets();
-  renderHourly();
-  renderTimeline();
-  calcOEE();
-  calcTotes();
 
-  // Login screen shows by default — user must enter PIN
-}
 
 // Wait for page to fully load before initializing
 if (document.readyState === 'loading') {
